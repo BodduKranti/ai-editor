@@ -5,15 +5,15 @@ import { FaCss3, FaHtml5, FaPython } from 'react-icons/fa'
 import { BsFiletypeJson, BsFiletypeCss } from 'react-icons/bs'
 export const getFileIcon = (name = "") => {
     const lower = name.toLowerCase()
-    const extension: any = lower?.split(".").pop()
+    const extension: string = lower.split(".").pop() || ""
 
-    const knowsName: any = {
+    const knownNames: any = {
         "package.json": { icon: Package, color: "text-emerald-400" },
         "package-lock.json": { icon: Lock, color: "text-zinc-500" },
         ".env": { icon: KeyRound, color: "text-lime-400" },
     }
 
-    if (knowsName[lower]) return
+    if (knownNames[lower]) return knownNames[lower]
 
     const map: any = {
         js: { icon: IoLogoJavascript, color: "text-yellow-400" },

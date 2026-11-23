@@ -1,5 +1,4 @@
 import { userAuthProvider } from "../../utils/ContextApi"
-import { ActivityIcon } from "../LeftSidebar/ProjectActivityleftsideBar"
 import { Bot, Code2, Files, SquareTerminal } from "lucide-react"
 
 const MobileActivity = () => {

@@ -1,7 +1,7 @@
-import { Send, Sparkles } from "lucide-react"
+import { FileMinus, FilePen, FilePlus, FolderPlus, Send, Sparkles } from "lucide-react"
 import { useState, type ChangeEvent } from "react"
 import TextAreafield from "../../../components/fields/TextAreafield"
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { userAuthProvider } from "../../../utils/ContextApi"
 import { Routes } from "../../../types"
 import { useQueryClient } from "@tanstack/react-query"
@@ -9,14 +9,98 @@ import { toast } from "react-toastify"
 import Spinner from "../../../components/Loader/Spinner"
 
 interface props {
-    projectId: any
+    projectId?: any,
+    toolType: any,
+    details: any
 }
 
 const AiAssistanceComponent = ({ projectId }: props) => {
     const { authUser } = userAuthProvider()
     const queryClient = useQueryClient()
-    const [messages, setMessages] = useState([])
+    const [messages, setMessages] = useState<any[]>([]);
     const [message, setMessage] = useState('')
+
+    const TOOL_META: any = {
+        folder_created: { icon: FolderPlus, color: "text-sky-400", label: "Created Folder" },
+        file_created: { icon: FilePlus, color: "text-emerald-400", label: "Created File" },
+        file_updated: { icon: FilePen, color: "text-amber-400", label: "Updated File" },
+        file_deleted: { icon: FileMinus, color: "text-red-400", label: "File Deleted" },
+    }
+
+    const ToolBedge = ({ toolType, details }: props) => {
+
+        const meta = TOOL_META[toolType]
+        if (!meta) return null
+        const Icon = meta.icon
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-center"
+            >
+                <div className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/3 px-3 py-1 text-[11.5px] text-zinc-400">
+                    <Icon size={11} className={`${meta?.color}`} />
+                    <span>{meta?.label}</span>
+                    {details && <span className="text-zinc-600">&middot; {details}</span>}
+                </div>
+            </motion.div>
+        )
+    }
+
+    const onEvent = async (toolType: string, data: any) => {
+        if (toolType === 'file_created') {
+            setMessages((prev: any) => [
+                ...prev,
+                { role: "tool", toolType: "file_created", detail: data?.file?.name },
+            ]);
+        }
+
+        if (toolType === 'file_updated') {
+            setMessages((prev: any) => [
+                ...prev,
+                { role: "tool", toolType: "file_updated", detail: data?.file?.name },
+            ]);
+        }
+
+
+        if (toolType === 'file_deleted') {
+            setMessages((prev: any) => [
+                ...prev,
+                { role: "tool", toolType: "file_deleted", detail: data?.file?.name },
+            ]);
+        }
+
+
+        if (toolType === 'folder_created') {
+            setMessages((prev: any) => [
+                ...prev,
+                { role: "tool", toolType: "folder_created", detail: data?.folder?.name },
+            ]);
+        }
+
+        if (toolType === 'message') {
+            const content = data?.content
+            if (!content) return;
+
+            setMessages((prev: any) => {
+                let copy = [...prev]
+                let last = copy[copy.length - 1]
+                if (last.role == "assistant") {
+                    copy[copy.length - 1] = { ...last, content }
+                } else {
+                    copy.push({ role: 'assistant', content })
+                }
+                return copy
+            });
+
+            return
+        }
+
+        if (toolType == 'error') {
+            throw new Error(data.message || 'Ai failed')
+        }
+    }
 
     // const aiChat = useApiAIPostrequest()
 
@@ -200,8 +284,7 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                         } catch {
                             data = { content: dataText };
                         }
-
-                        console.log('eventType', eventType)
+                        onEvent(eventType, data)
                         console.log('eventType', eventType)
 
                         switch (eventType) {
@@ -250,6 +333,17 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                         <p className="mt-1.5 text-xs text-zinc-600">Ask me to create or modify files.</p>
                     </div>
                 )}
+
+                <AnimatePresence initial={false}>
+                    {messages?.map((msg: any, index: number) => {
+                        if (msg.role === "tool") {
+                            return <ToolBedge toolType={msg?.toolType} details={msg?.details} key={index} />;
+                        }
+                        return <></>
+                            ;
+                    })}
+
+                </AnimatePresence>
             </div>
 
 
@@ -270,7 +364,8 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-linear-to-b from-sky-500 to-sky-500 text-white shadow-[0_1px_0_rgba(255,255,255,.0.2)] transition-opacity hover:from-sky-400 hover:to-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
                         onClick={(e) => aiChatFun(e)}
                     >
-                        {isStreaming ? <Spinner /> : <Send size={11} />}
+                        {isStreaming ? <Spinner className={`w-5! h-5!`}
+                        /> : <Send size={11} />}
 
                     </motion.button>
                 </div>
