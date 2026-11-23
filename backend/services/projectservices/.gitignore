@@ -1,0 +1,7 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains OPENROUTER_API_KEY)
+.env
+.env.*
+!.env.example
