@@ -26,7 +26,8 @@ AxiosInstance.interceptors.request.use((config) => {
 
 //chat get header 
 AxiosChatInstance.interceptors.request.use((config) => {
-    let sessionId = localStorage.getItem('sessionId')
-    if (sessionId) config.headers.Authorization = `Bearer ${sessionId}`
+    const token = localStorage.getItem('sessionId')
+    if (token) config.headers.Authorization = `Bearer ${token}`
+
     return config
 })
