@@ -82,7 +82,7 @@ app.use('/api/project', protectMiddleware, proxywithHEader(PROJECT_SERVICE))
 app.use('/api/file', protectMiddleware, proxywithHEader(FILE_SERVICE))
 
 // ---- AI FILE SERVICES ----
-app.use('/api/ai', protectMiddleware, proxywithHEader(AI_FILE_SERVICE))
+app.use('/api/ai', proxywithHEader(AI_FILE_SERVICE))
 
 // ---- Fallback error handler (so errors show in logs, not just 502) ----
 app.use((err, req, res, next) => {

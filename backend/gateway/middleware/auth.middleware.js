@@ -6,7 +6,7 @@ import redis from "../../shared/redis/redis.js"
 export const protectMiddleware = async (req, res, next) => {
     try {
 
-        const header = req.headers.authorization
+        const header = req?.headers?.authorization
 
         console.log('header', header)
 
