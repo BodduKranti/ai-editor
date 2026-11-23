@@ -74,7 +74,17 @@ export const loginAuthcontroller = async (req, res) => {
 export const authLogoutcontroller = async (req, res) => {
     try {
         // `req.cookies` (plural) needs cookie-parser in THIS service
-        const sessionId = req.cookies?.session
+        // const sessionId = req.cookies?.session
+
+        const header = req.headers.authorization
+
+        console.log('header', header)
+
+        //get the session ID from cookie use with req.cookies.session
+        const sessionId =
+            req.cookies?.session ||
+            (header?.startsWith("Bearer ") ? header.slice(7) : undefined)
+        console.log('me sessionId', sessionId)
 
         if (sessionId) {
             await redis.del(`session-${sessionId}`)
