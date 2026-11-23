@@ -35,7 +35,12 @@ export const AuthContext = createContext<ContextProps | null>(null)
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
     const queryClient = useQueryClient();
-    const { data: userData, isLoading, refetch } = useApiGetRequest(Routes.CURRENT_USER)
+    const sessionId = localStorage.getItem('sessionId');
+
+    const { data: userData, isLoading, refetch } = useApiGetRequest(
+        Routes.CURRENT_USER,
+        { enabled: !!sessionId }
+    );
 
     //porject top bar
     const [preview, setPreview] = useState<boolean>(false)
@@ -85,7 +90,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: userData.name,
             email: userData.email,
             avatar: userData.avatar,
-            token: localStorage.getItem('sessionId') || null
+            token: sessionId || null
         };
     }, [userData]);
 
