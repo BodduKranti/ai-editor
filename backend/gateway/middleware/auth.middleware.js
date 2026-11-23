@@ -6,8 +6,14 @@ import redis from "../../shared/redis/redis.js"
 export const protectMiddleware = async (req, res, next) => {
     try {
 
+        const header = req.headers.authorization
+
+        console.log('header', header)
+
         //get the session ID from cookie use with req.cookies.session
-        const sessionId = req.cookies.session
+        const sessionId =
+            req.cookies?.session ||
+            (header?.startsWith("Bearer ") ? header.slice(7) : undefined)
         console.log('me sessionId', sessionId)
         if (!sessionId) {
             return res.status(400).json({

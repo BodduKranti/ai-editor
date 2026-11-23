@@ -64,7 +64,7 @@ export const loginAuthcontroller = async (req, res) => {
         })
 
         // The frontend already has the Firebase token, so don't send it back
-        return res.status(200).json({ user })
+        return res.status(200).json({ sessionId, user })
     } catch (error) {
         console.error('Login error:', error)
         return res.status(500).json({ message: "Authentication error" })

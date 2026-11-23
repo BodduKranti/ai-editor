@@ -18,7 +18,7 @@ export const AxiosChatInstance = axios.create({
 })
 
 AxiosInstance.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('sessionId')
     if (token) config.headers.Authorization = `Bearer ${token}`
 
     return config

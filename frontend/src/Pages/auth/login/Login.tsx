@@ -28,6 +28,7 @@ const Login = () => {
         }, {
             onSuccess: (data: any) => {
                 // 1. update context immediately with the user from the login response
+                if (data?.sessionId) localStorage.setItem('sessionId', data?.sessionId)
                 if (data?.user) setAuthUser(data.user);
                 // 2. sync with the server in the background (session cookie is now set)
                 refetchUser();

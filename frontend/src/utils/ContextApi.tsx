@@ -66,7 +66,10 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         logOut.mutate(
             { URL: Routes.LOGOUT_URL, payload: {} },
             {
-                onSuccess: () => setAuthUser(null),
+                onSuccess: () => {
+                    setAuthUser(null)
+                    localStorage.removeItem("sessionId")
+                },
                 onError: (error: any) => console.log(error),
             }
         );
