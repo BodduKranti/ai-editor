@@ -7,10 +7,10 @@ const PublicLayout = () => {
 
     const { authUser } = userAuthProvider()
     // const { theme, toggleTheme } = useTheme();
-    // console.log('authUser', authUser)
+    console.log('authUser', authUser)
     // if (isLoading) return <PageLoader className="h-10 w-10" />;
 
-    if (authUser?.name) {
+    if (authUser?.token) {
         return <Navigate to={'/projects'} replace />
     }
 

@@ -7,7 +7,8 @@ interface AuthUser {
     _id: string,
     name: string,
     email: string,
-    avatar: string
+    avatar: string,
+    token: string | null
 }
 
 interface ContextProps {
@@ -69,6 +70,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
                 onSuccess: () => {
                     setAuthUser(null)
                     localStorage.removeItem("sessionId")
+                    queryClient.invalidateQueries({ queryKey: [Routes.CURRENT_USER] })
                 },
                 onError: (error: any) => console.log(error),
             }
@@ -83,6 +85,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: userData.name,
             email: userData.email,
             avatar: userData.avatar,
+            token: localStorage.getItem('sessionId') || null
         };
     }, [userData]);
 

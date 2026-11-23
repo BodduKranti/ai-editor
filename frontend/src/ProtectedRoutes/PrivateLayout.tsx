@@ -12,7 +12,7 @@ const PrivateLayout = () => {
     if (isLoading) {
         return <PageLoader className="h-10 w-10" />
     }
-    if (!authUser?.name) {
+    if (!authUser?.token) {
         return <Navigate to="/login" replace state={{ from: location }} />
     }
 
