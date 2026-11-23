@@ -10,8 +10,38 @@ import Spinner from "../../../components/Loader/Spinner"
 
 interface props {
     projectId?: any,
+}
+
+interface tool_metaProps {
     toolType: any,
     details: any
+}
+const TOOL_META: any = {
+    folder_created: { icon: FolderPlus, color: "text-sky-400", label: "Created Folder" },
+    file_created: { icon: FilePlus, color: "text-emerald-400", label: "Created File" },
+    file_updated: { icon: FilePen, color: "text-amber-400", label: "Updated File" },
+    file_deleted: { icon: FileMinus, color: "text-red-400", label: "File Deleted" },
+}
+
+const ToolBedge = ({ toolType, details }: tool_metaProps) => {
+
+    const meta = TOOL_META[toolType]
+    if (!meta) return null
+    const Icon = meta.icon
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-center"
+        >
+            <div className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/3 px-3 py-1 text-[11.5px] text-zinc-400">
+                <Icon size={11} className={`${meta?.color}`} />
+                <span>{meta?.label}</span>
+                {details && <span className="text-zinc-600">&middot; {details}</span>}
+            </div>
+        </motion.div>
+    )
 }
 
 const AiAssistanceComponent = ({ projectId }: props) => {
@@ -20,33 +50,7 @@ const AiAssistanceComponent = ({ projectId }: props) => {
     const [messages, setMessages] = useState<any[]>([]);
     const [message, setMessage] = useState('')
 
-    const TOOL_META: any = {
-        folder_created: { icon: FolderPlus, color: "text-sky-400", label: "Created Folder" },
-        file_created: { icon: FilePlus, color: "text-emerald-400", label: "Created File" },
-        file_updated: { icon: FilePen, color: "text-amber-400", label: "Updated File" },
-        file_deleted: { icon: FileMinus, color: "text-red-400", label: "File Deleted" },
-    }
 
-    const ToolBedge = ({ toolType, details }: props) => {
-
-        const meta = TOOL_META[toolType]
-        if (!meta) return null
-        const Icon = meta.icon
-
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-center"
-            >
-                <div className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/3 px-3 py-1 text-[11.5px] text-zinc-400">
-                    <Icon size={11} className={`${meta?.color}`} />
-                    <span>{meta?.label}</span>
-                    {details && <span className="text-zinc-600">&middot; {details}</span>}
-                </div>
-            </motion.div>
-        )
-    }
 
     const onEvent = async (toolType: string, data: any) => {
         if (toolType === 'file_created') {
