@@ -23,3 +23,10 @@ AxiosInstance.interceptors.request.use((config) => {
 
     return config
 })
+
+//chat get header 
+AxiosChatInstance.interceptors.request.use((config) => {
+    let sessionId = localStorage.getItem('sessionId')
+    if (sessionId) config.headers.Authorization = `Bearer ${sessionId}`
+    return config
+})
