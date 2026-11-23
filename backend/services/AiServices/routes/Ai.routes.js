@@ -1,5 +1,5 @@
 import express from 'express'
-import { chat } from '../controller/Ai.Controller.js'
+import { chat } from '../controller/ai.controller.js'
 const router = express.Router()
 router.post("/chat", chat)
 
