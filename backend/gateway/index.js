@@ -10,40 +10,87 @@ import { proxywithHEader } from './utils/proxyWithHeader.js'
 
 dotenv.config()
 
+// ---- Fail fast with a clear log line if an env var is missing ----
+const required = [
+    'CLIENT_URL',
+    'AUTH_SERVICE',
+    'PROJECT_SERVICE',
+    'FILE_SERVICE',
+    'AI_FILE_SERVICE',
+]
+const missing = required.filter((key) => !process.env[key])
+if (missing.length) {
+    console.error(`Missing env vars: ${missing.join(', ')}`)
+    process.exit(1)
+}
+
+// Remove trailing slashes so CORS origin and proxy targets match exactly
+const clean = (url) => url.replace(/\/+$/, '')
+
+const CLIENT_URL = clean(process.env.CLIENT_URL)
+const AUTH_SERVICE = clean(process.env.AUTH_SERVICE)
+const PROJECT_SERVICE = clean(process.env.PROJECT_SERVICE)
+const FILE_SERVICE = clean(process.env.FILE_SERVICE)
+const AI_FILE_SERVICE = clean(process.env.AI_FILE_SERVICE)
+
 const PORT = process.env.PORT || 8000
 
 const app = express()
+
+// Needed on Render (behind a proxy) so secure cookies work
+app.set('trust proxy', 1)
+
+// ---- CORS ----
+app.use(
+    cors({
+        origin: CLIENT_URL,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Accept', 'x-user-id', 'Authorization'],
+        credentials: true,
+    })
+)
+
 app.use(express.json())
-
-//cors
-app.use(cors({
-    origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Accept", "x-user-id", "Authorization"],
-    credentials: true
-}))
-
 app.use(cookieparser())
-app.use(morgan("dev"))
+app.use(morgan('dev'))
 
-app.get("/", (_, res) => {
-    return res.status(200).json({ message: "This the gateway section" })
+// ---- Health checks ----
+app.get('/', (_, res) => {
+    return res.status(200).json({ message: 'This the gateway section' })
 })
 
-//AUTH USER SERVICES
-app.use("/api/auth", proxy(process.env.AUTH_SERVICE));
-app.get("/api/me", protectMiddleware, userController)
+app.get('/health', (_, res) => {
+    return res.status(200).json({ status: 'ok' })
+})
 
-//PROJECT SERVICES
-app.use("/api/project", protectMiddleware, proxywithHEader(process.env.PROJECT_SERVICE))
-//FILE SERVICES
-app.use("/api/file", protectMiddleware, proxywithHEader(process.env.FILE_SERVICE))
+// ---- AUTH USER SERVICES ----
+// By default "/api/auth" is stripped, so the auth service receives "/login".
+// If your auth service defines routes WITH the "/api/auth" prefix, uncomment
+// proxyReqPathResolver below.
+app.use(
+    '/api/auth',
+    proxy(AUTH_SERVICE, {
+        // proxyReqPathResolver: (req) => `/api/auth${req.url}`,
+    })
+)
+app.get('/api/me', protectMiddleware, userController)
 
-//AI FILE SERVICES
-app.use("/api/ai", protectMiddleware, proxywithHEader(process.env.AI_FILE_SERVICE))
+// ---- PROJECT SERVICES ----
+app.use('/api/project', protectMiddleware, proxywithHEader(PROJECT_SERVICE))
 
+// ---- FILE SERVICES ----
+app.use('/api/file', protectMiddleware, proxywithHEader(FILE_SERVICE))
 
+// ---- AI FILE SERVICES ----
+app.use('/api/ai', protectMiddleware, proxywithHEader(AI_FILE_SERVICE))
 
-app.listen(PORT, () => {
+// ---- Fallback error handler (so errors show in logs, not just 502) ----
+app.use((err, req, res, next) => {
+    console.error('Gateway error:', err.message)
+    res.status(500).json({ message: 'Gateway error' })
+})
+
+// Bind to 0.0.0.0 so Render can detect the open port
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`This server is running on ${PORT}`)
 })
