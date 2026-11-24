@@ -25,7 +25,12 @@ if (missing.length) {
 }
 
 // Remove trailing slashes so CORS origin and proxy targets match exactly
-const clean = (url) => url.replace(/\/+$/, '')
+const clean = (url, name = 'URL') => {
+    if (!url) {
+        throw new Error(`Missing environment variable: ${name}`)
+    }
+    return url.replace(/\/+$/, '')
+}
 
 const CLIENT_URL = clean(process.env.CLIENT_URL)
 const AUTH_SERVICE = clean(process.env.AUTH_SERVICE)
