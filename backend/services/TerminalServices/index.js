@@ -76,7 +76,9 @@ const getTree = async (projectId, userId) => {
         throw new Error(data?.message || `File server returned ${response.status}`)
     }
 
-    return Array.isArray(data.tree) ? data.tree : []
+    console.log("PROJECT_TREE", JSON.stringify(data, null, 2))
+
+    return Array.isArray(data) ? data : []
 }
 
 const writeNodes = async (nodes, directory) => {

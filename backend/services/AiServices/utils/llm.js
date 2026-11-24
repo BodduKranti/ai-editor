@@ -2,12 +2,18 @@ import { ChatOpenRouter } from "@langchain/openrouter";
 import dotenv from 'dotenv'
 dotenv.config()
 const llm = new ChatOpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY,
-    // model: "deepseek/deepseek-chat",
-    model: "particle-ai/particle-1:free",
-    maxTokens: 1024,
-    temperature: 0.2,
+    // apiKey: process.env.OPENROUTER_API_KEY,
+    // // model: "deepseek/deepseek-chat",
+    // model: "perplexity/pplx-decider-v1.3:free",
+    // maxTokens: 1024,
+    // temperature: 0.2,
     // other params...
+
+    apiKey: process.env.OPENROUTER_API_KEY,
+    model: "openrouter/free",
+    maxTokens: undefined,
+    temperature: 0,
+    configuration: { baseURL: "https://openrouter.ai/api/v1" },
 });
 
 export default llm

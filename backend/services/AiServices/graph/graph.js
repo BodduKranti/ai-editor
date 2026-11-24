@@ -475,20 +475,19 @@ Return only:
 const max_message = 12
 
 const getRecentmessages = (messages = []) => {
-    if (messages?.length <= max_message) {
-        return messages
+    if (messages.length <= max_message) return messages
+
+    const firstUserMessage = messages.find((msg) => HumanMessage.isInstance(msg))
+
+    let recents = messages.slice(-max_message)
+
+    // a slice must not start with an orphaned tool result
+    while (recents.length && recents[0]?.getType?.() === "tool") {
+        recents = recents.slice(1)
     }
 
-    const firstUserMessage = () => {
-        messages.find((msg) => HumanMessage.isInstance(msg))
-    }
-
-    const recents = messages.slice(-max_message)
     if (firstUserMessage && !recents.includes(firstUserMessage)) {
-        return [
-            firstUserMessage,
-            ...recents
-        ]
+        return [firstUserMessage, ...recents]
     }
     return recents
 }

@@ -135,8 +135,10 @@ export default function Terminal({ projectId, height = '100%' }: Props) {
                 <Eraser size={11} />
             </button>
         </div>
-        <div ref={containerRef}
+
+        <div ref={containerRef} className=''
             style={{ width: '100%', height, minHeight: 200 }} />
+
     </div>
 
 }

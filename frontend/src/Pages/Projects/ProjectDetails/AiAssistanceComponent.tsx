@@ -1,7 +1,7 @@
 import { FileMinus, FilePen, FilePlus, FolderPlus, Send, Sparkles } from "lucide-react"
-import { useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import TextAreafield from "../../../components/fields/TextAreafield"
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion } from "motion/react"
 import { userAuthProvider } from "../../../utils/ContextApi"
 import { Routes } from "../../../types"
 import { useQueryClient } from "@tanstack/react-query"
@@ -9,13 +9,16 @@ import { toast } from "react-toastify"
 import Spinner from "../../../components/Loader/Spinner"
 
 interface props {
-    projectId?: any,
+    projectId?: any
 }
 
-interface tool_metaProps {
-    toolType: any,
-    details: any
+interface ChatMessage {
+    role: "user" | "assistant" | "tool"
+    content?: string
+    toolType?: string
+    details?: string
 }
+
 const TOOL_META: any = {
     folder_created: { icon: FolderPlus, color: "text-sky-400", label: "Created Folder" },
     file_created: { icon: FilePlus, color: "text-emerald-400", label: "Created File" },
@@ -23,9 +26,8 @@ const TOOL_META: any = {
     file_deleted: { icon: FileMinus, color: "text-red-400", label: "File Deleted" },
 }
 
-const ToolBedge = ({ toolType, details }: tool_metaProps) => {
-
-    const meta = TOOL_META[toolType]
+const ToolBadge = ({ toolType, details }: { toolType?: string; details?: string }) => {
+    const meta = toolType ? TOOL_META[toolType] : null
     if (!meta) return null
     const Icon = meta.icon
 
@@ -35,11 +37,32 @@ const ToolBedge = ({ toolType, details }: tool_metaProps) => {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center justify-center"
         >
-            <div className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/3 px-3 py-1 text-[11.5px]
-             text-zinc-400">
-                <Icon size={20} className={`${meta?.color}`} />
-                {/* <span>{meta?.label}</span> */}
+            <div className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/3 px-3 py-1 text-[11.5px] text-zinc-400">
+                <Icon size={16} className={meta.color} />
+                <span>{meta.label}</span>
                 {details && <span className="text-zinc-600">&middot; {details}</span>}
+            </div>
+        </motion.div>
+    )
+}
+
+const ChatBubble = ({ role, content }: { role: "user" | "assistant"; content?: string }) => {
+    if (!content) return null
+    const isUser = role === "user"
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+        >
+            <div
+                className={`max-w-[90%] whitespace-pre-wrap wrap-break-word rounded-2xl px-3 py-2 text-[13px] leading-relaxed ${isUser
+                        ? "rounded-br-sm bg-sky-500/90 text-white"
+                        : "rounded-bl-sm border border-white/8 bg-white/4 text-zinc-200"
+                    }`}
+            >
+                {content}
             </div>
         </motion.div>
     )
@@ -48,94 +71,72 @@ const ToolBedge = ({ toolType, details }: tool_metaProps) => {
 const AiAssistanceComponent = ({ projectId }: props) => {
     const { authUser } = userAuthProvider()
     const queryClient = useQueryClient()
-    const [messages, setMessages] = useState<any[]>([]);
-    const [message, setMessage] = useState('')
+    const [messages, setMessages] = useState<ChatMessage[]>([])
+    const [message, setMessage] = useState("")
+    const [isStreaming, setIsStreaming] = useState(false)
+    const bottomRef = useRef<HTMLDivElement>(null)
 
+    // keep the newest message in view
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, [messages])
 
+    const refreshTree = () => {
+        queryClient.invalidateQueries({
+            queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
+        })
+    }
 
-    const onEvent = async (toolType: string, data: any) => {
-        if (toolType === 'file_created') {
-            setMessages((prev: any) => [
-                ...prev,
-                { role: "tool", toolType: "file_created", detail: data?.file?.name },
-            ]);
-        }
+    // handles one SSE event
+    const onEvent = (eventType: string, data: any) => {
+        switch (eventType) {
+            case "file_created":
+            case "file_updated":
+            case "file_deleted":
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "tool", toolType: eventType, details: data?.file?.name },
+                ])
+                refreshTree()
+                break
 
-        if (toolType === 'file_updated') {
-            setMessages((prev: any) => [
-                ...prev,
-                { role: "tool", toolType: "file_updated", detail: data?.file?.name },
-            ]);
-        }
+            case "folder_created":
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "tool", toolType: eventType, details: data?.folder?.name },
+                ])
+                refreshTree()
+                break
 
+            case "message": {
+                // assumes each "message" event carries the text of one assistant reply
+                const content = typeof data?.content === "string" ? data.content : ""
+                if (!content.trim()) break
+                setMessages((prev) => [...prev, { role: "assistant", content }])
+                break
+            }
 
-        if (toolType === 'file_deleted') {
-            setMessages((prev: any) => [
-                ...prev,
-                { role: "tool", toolType: "file_deleted", detail: data?.file?.name },
-            ]);
-        }
+            case "error":
+                throw new Error(data?.message || "Stream error")
 
-
-        if (toolType === 'folder_created') {
-            setMessages((prev: any) => [
-                ...prev,
-                { role: "tool", toolType: "folder_created", detail: data?.folder?.name },
-            ]);
-        }
-
-        if (toolType === 'message') {
-            const content = data?.content
-            if (!content) return;
-
-            setMessages((prev: any) => {
-                let copy = [...prev]
-                let last = copy[copy.length - 1]
-                if (last.role == "assistant") {
-                    copy[copy.length - 1] = { ...last, content }
-                } else {
-                    copy.push({ role: 'assistant', content })
-                }
-                return copy
-            });
-
-            return
-        }
-
-        if (toolType == 'error') {
-            throw new Error(data.message || 'Ai failed')
+            case "done":
+                refreshTree()
+                break
         }
     }
 
-    // const aiChat = useApiAIPostrequest()
+    const sendMessage = async () => {
+        const text = message.trim()
+        if (!text || isStreaming) return
 
-    // const aiChatFun = (e: any) => {
-    //     e.stopPropagation()
-    //     aiChat.mutate({
-    //         URL: Routes.AI_SERVICES,
-    //         payload: {
-    //             projectId,
-    //             message: message,
-    //         }
-    //     }, {
-    //         onSuccess: (data) => {
-    //             console.log('Ai Data', data)
-    //             queryClient.invalidateQueries({ queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`] })
-    //         },
-    //         onError: (err: any) => {
-    //             toast.error(err?.response.data?.message)
-    //         }
-    //     })
-    // }    
+        // only user/assistant text goes back to the server as history
+        const history = messages
+            .filter((m) => m.role !== "tool" && m.content)
+            .map((m) => ({ role: m.role, content: m.content }))
 
-
-    const [answer, setAnswer] = useState("");
-    const [isStreaming, setIsStreaming] = useState(false);
-
-    const aiChatFun = async (e: React.SyntheticEvent) => {
-        e.stopPropagation();
-        setAnswer("");
-        setIsStreaming(true);
+        setMessages((prev) => [...prev, { role: "user", content: text }])
+        setMessage("")
+        setIsStreaming(true)
 
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}${Routes.AI_SERVICES}`, {
@@ -146,105 +147,81 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                     "x-user-id": `${authUser?._id}`,
                 },
                 credentials: "include",
-                body: JSON.stringify({ projectId, message, history }),
-            });
+                body: JSON.stringify({ projectId, message: text, history }),
+            })
 
             if (!response.ok) {
-                let msg = "AI request failed";
+                let msg = "AI request failed"
                 try {
-                    const data = await response.json();
-                    msg = data?.message || msg;
+                    const data = await response.json()
+                    msg = data?.message || msg
                 } catch {
                     // keep default message
                 }
-                throw new Error(msg);
+                throw new Error(msg)
             }
 
-            if (!response.body) throw new Error("AI streaming is not supported");
+            if (!response.body) throw new Error("AI streaming is not supported")
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ""
 
             try {
                 while (true) {
-                    // replaces onSuccess (runs only if no error was thrown)
-                    queryClient.invalidateQueries({
-                        queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
-                    });
-                    const { value, done } = await reader.read();
-                    if (done) break;
+                    const { value, done } = await reader.read()
+                    if (done) break
 
-                    buffer += decoder.decode(value, { stream: true });
-                    const events = buffer.split(/\r?\n\r?\n/);
-                    buffer = events.pop() || "";
+                    buffer += decoder.decode(value, { stream: true })
+                    const events = buffer.split(/\r?\n\r?\n/)
+                    buffer = events.pop() || ""
 
                     for (const eventText of events) {
-                        if (!eventText.trim()) continue;
+                        if (!eventText.trim()) continue
 
-                        let eventType = "message";
-                        const dataLines: string[] = [];
+                        let eventType = "message"
+                        const dataLines: string[] = []
 
                         for (const line of eventText.split(/\r?\n/)) {
                             if (line.startsWith("event:")) {
-                                eventType = line.slice(6).trim();
+                                eventType = line.slice(6).trim()
                             } else if (line.startsWith("data:")) {
-                                dataLines.push(line.slice(5).trim());
+                                dataLines.push(line.slice(5).trim())
                             }
                         }
 
-                        const dataText = dataLines.join("\n");
-                        if (!dataText) continue;
+                        const dataText = dataLines.join("\n")
+                        if (!dataText) continue
 
-                        let data;
+                        let data: any
                         try {
-                            data = JSON.parse(dataText);
+                            data = JSON.parse(dataText)
                         } catch {
-                            data = { content: dataText };
+                            data = { content: dataText }
                         }
+
                         onEvent(eventType, data)
-                        if (data?.message) {
-                            setMessages([{ role: 'tool', toolType: 'folder_created', details: data?.message }])
-                        }
-
-                        console.log('eventType', eventType)
-
-                        switch (eventType) {
-                            case "message":
-                                setAnswer((prev) => prev + (data?.content ?? ""));
-                                break;
-                            case "error":
-                                throw new Error(data?.message || "Stream error");
-                            case "done":
-                                console.log("Ai Data", data);
-                                return; // finally blocks below still run
-                        }
+                        if (eventType === "done") return
                     }
                 }
             } finally {
-                reader.releaseLock();
-                setMessage('')
+                reader.releaseLock()
             }
         } catch (err: any) {
-            // replaces onError
-            toast.error(err?.message || "AI request failed");
-            return;
+            toast.error(err?.message || "AI request failed")
         } finally {
-            setIsStreaming(false);
+            setIsStreaming(false)
         }
-
-
-    };
-
+    }
 
     return (
-        <div className="flex w-80 shrink-0 flex-col border-l border-white/6 bg-[#111113]/90 backdrop-blur-xl ">
+        <div className="flex w-80 shrink-0 flex-col border-l border-white/6 bg-[#111113]/90 backdrop-blur-xl">
             <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/6 px-3">
                 <span className="text-xs font-semibold tracking-wider text-zinc-300">Ai Editor Chat</span>
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto p-3">
-                {messages.length == 0 && (
+                {messages.length === 0 && (
                     <div className="mt-10 text-center">
                         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/6 bg-white/2">
                             <Sparkles size={22} className="text-zinc-600" />
@@ -255,17 +232,23 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                 )}
 
                 <AnimatePresence initial={false}>
-                    {messages?.map((msg: any, index: number) => {
+                    {messages.map((msg, index) => {
                         if (msg.role === "tool") {
-                            return <ToolBedge toolType={msg?.toolType} details={msg?.details} key={index} />;
+                            return <ToolBadge key={index} toolType={msg.toolType} details={msg.details} />
                         }
-                        return <></>
-                            ;
+                        return <ChatBubble key={index} role={msg.role} content={msg.content} />
                     })}
-
                 </AnimatePresence>
-            </div>
 
+                {isStreaming && (
+                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                        <Spinner className="w-4! h-4!" />
+                        <span>Working...</span>
+                    </div>
+                )}
+
+                <div ref={bottomRef} />
+            </div>
 
             <div className="border-t border-white/6 p-3">
                 <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 p-2 transition-colors focus-within:border-sky-400/40">
@@ -274,19 +257,16 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                         rows={1}
                         cols={4}
                         placeholder="Ask AI to build something..."
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                            setMessage(e.target.value)
-                        }}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setMessage(e.target.value)}
                     />
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-linear-to-b from-sky-500 to-sky-500 text-white shadow-[0_1px_0_rgba(255,255,255,.0.2)] transition-opacity hover:from-sky-400 hover:to-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
-                        onClick={(e) => aiChatFun(e)}
+                        disabled={isStreaming || !message.trim()}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-linear-to-b from-sky-500 to-sky-500 text-white transition-opacity hover:from-sky-400 hover:to-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={sendMessage}
                     >
-                        {isStreaming ? <Spinner className={`w-5! h-5!`}
-                        /> : <Send size={11} />}
-
+                        {isStreaming ? <Spinner className="w-5! h-5!" /> : <Send size={14} />}
                     </motion.button>
                 </div>
             </div>
