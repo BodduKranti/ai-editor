@@ -3,6 +3,7 @@ import { TerminalSquare } from 'lucide-react'
 import { motion } from 'motion/react'
 import { userAuthProvider } from '../../../utils/ContextApi'
 import { IoClose } from 'react-icons/io5'
+import TerminalSection from './Terminal'
 interface props {
     projectId: any
 }
@@ -21,7 +22,7 @@ const CodeTerminal = ({ projectId }: props) => {
             <div className='flex h-9 shrink-0 items-center justify-between border-b border-white/6 px-3'>
                 <div className='flex items-center gap-1'>
                     <h2 className='relative flex items-center gap-1.5 rouded-md px-2.5 py-1.5 text-[11px] font-semibold tracking-wide transition-colors text-white'>
-                        <TerminalSquare size={11} /> <span className=' uppercase'>Terminal {projectId}</span>
+                        <TerminalSquare size={11} /> <span className=' uppercase'>Terminal</span>
                     </h2>
                 </div>
 
@@ -32,6 +33,12 @@ const CodeTerminal = ({ projectId }: props) => {
                     <IoClose size={11} />
                 </button>
             </div>
+
+
+            {/*Terminal */}
+            <TerminalSection
+                projectId={projectId}
+            />
         </motion.div>
     )
 }

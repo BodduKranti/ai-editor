@@ -49,3 +49,7 @@ How to impliment
 
         TOOL Creation
 
+=================================
+TERMINAL SERVICES
+=================================
+CMD     -       npm i socketio

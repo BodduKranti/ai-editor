@@ -8,7 +8,8 @@ interface AuthUser {
     name: string,
     email: string,
     avatar: string,
-    token: string | null
+    token: string | null,
+    owner: string | null
 }
 
 interface ContextProps {
@@ -90,7 +91,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: userData.name,
             email: userData.email,
             avatar: userData.avatar,
-            token: sessionId || null
+            token: sessionId || null,
+            owner: userData?.owner
         };
     }, [userData]);
 

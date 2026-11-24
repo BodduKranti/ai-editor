@@ -3,8 +3,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 const llm = new ChatOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
-    model: "deepseek/deepseek-chat",
-    // model: "~openai/gpt-sol-latest",
+    // model: "deepseek/deepseek-chat",
+    model: "particle-ai/particle-1:free",
     maxTokens: 1024,
     temperature: 0.2,
     // other params...

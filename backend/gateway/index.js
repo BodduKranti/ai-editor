@@ -32,6 +32,7 @@ const AUTH_SERVICE = clean(process.env.AUTH_SERVICE)
 const PROJECT_SERVICE = clean(process.env.PROJECT_SERVICE)
 const FILE_SERVICE = clean(process.env.FILE_SERVICE)
 const AI_FILE_SERVICE = clean(process.env.AI_FILE_SERVICE)
+const TERMINAL_SERVICE = clean(process.env.TERMINAL_SERVICE)
 
 const PORT = process.env.PORT || 8000
 
@@ -83,6 +84,9 @@ app.use('/api/file', protectMiddleware, proxywithHEader(FILE_SERVICE))
 
 // ---- AI FILE SERVICES ----
 app.use('/api/ai', proxywithHEader(AI_FILE_SERVICE))
+
+// ---- Terminal SERVICES ----
+app.use('/api/terminal', protectMiddleware, proxywithHEader(TERMINAL_SERVICE))
 
 // ---- Fallback error handler (so errors show in logs, not just 502) ----
 app.use((err, req, res, next) => {
