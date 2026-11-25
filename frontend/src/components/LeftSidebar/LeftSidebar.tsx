@@ -79,8 +79,6 @@ const LeftSidebar = () => {
                 </MotionNavLink>
             </div>
 
-            <div className="my-4 h-px bg-slate-200/70 dark:bg-white/6" />
-
             <UserDetails />
         </div>
     )

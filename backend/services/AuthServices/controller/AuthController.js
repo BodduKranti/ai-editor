@@ -45,6 +45,8 @@ export const loginAuthcontroller = async (req, res) => {
 
         // Create the session in Redis
         const sessionId = crypto.randomUUID()
+        await redis.set(`user-session-${user?._id}`, sessionId, 'EX',
+            SESSION_TTL_SECONDS)
 
         await redis.set(
             `session-${sessionId}`,
@@ -53,6 +55,7 @@ export const loginAuthcontroller = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 avatar: user.avatar,
+                credits: user?.credits
             }),
             'EX',
             SESSION_TTL_SECONDS
@@ -97,5 +100,94 @@ export const authLogoutcontroller = async (req, res) => {
     } catch (error) {
         console.error('Logout error:', error)
         return res.status(500).json({ message: "Logout error" })
+    }
+}
+
+
+export const deductCredits = async (req, res) => {
+    try {
+        const { userId, amount } = req.body
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required!" })
+        }
+
+        const cost = Number(amount)
+        if (!Number.isFinite(cost) || cost <= 0) {
+            return res.status(400).json({ message: "Valid amount is required!" })
+        }
+
+        const user = await User.findOneAndUpdate(
+            { _id: userId, credits: { $gte: cost } },
+            { $inc: { credits: -cost } },
+            { returnDocument: "after" }
+        ).select('-password')   // everything except the password
+
+        if (!user) {
+            return res.status(400).json({ message: "Insufficient credits" })
+        }
+
+        const sessionId = await redis.get(`user-session-${userId}`)
+        if (sessionId) {
+            await redis.set(
+                `session-${sessionId}`,
+                JSON.stringify({
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    credits: user.credits,
+                }),
+                'EX',
+                SESSION_TTL_SECONDS
+            )
+        }
+
+        return res.status(200).json(user)
+
+    } catch (error) {
+        return res.status(500).json({ message: `Deduct credits error ${error}` })
+    }
+}
+
+
+//after payment add credits
+export const addCredits = async (req, res) => {
+    try {
+        const { userId, credits } = req.body
+
+
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required!" })
+        }
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return res.status(400).json({ message: "User not found" })
+        }
+
+        user.credits = (user?.credits || 0) + credits
+        user.save()
+        const sessionId = await redis.get(`user-session-${userId}`)
+        await redis.set(
+            `session-${sessionId}`,
+            JSON.stringify({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                credits: user?.credits
+            }),
+            'EX',
+            SESSION_TTL_SECONDS
+        )
+
+
+        return res.status(200).json(user?.credits)
+
+    } catch (error) {
+        return res.status(500).json({ message: `Add credits error ${error}` })
     }
 }

@@ -58,8 +58,8 @@ const ChatBubble = ({ role, content }: { role: "user" | "assistant"; content?: s
         >
             <div
                 className={`max-w-[90%] whitespace-pre-wrap wrap-break-word rounded-2xl px-3 py-2 text-[13px] leading-relaxed ${isUser
-                        ? "rounded-br-sm bg-sky-500/90 text-white"
-                        : "rounded-bl-sm border border-white/8 bg-white/4 text-zinc-200"
+                    ? "rounded-br-sm bg-sky-500/90 text-white"
+                    : "rounded-bl-sm border border-white/8 bg-white/4 text-zinc-200"
                     }`}
             >
                 {content}
@@ -204,6 +204,8 @@ const AiAssistanceComponent = ({ projectId }: props) => {
                         if (eventType === "done") return
                     }
                 }
+
+                queryClient.invalidateQueries({ queryKey: [Routes.CURRENT_USER] })
             } finally {
                 reader.releaseLock()
             }

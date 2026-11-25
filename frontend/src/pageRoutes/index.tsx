@@ -6,6 +6,8 @@ import Projects from "../Pages/Projects/Projects";
 import Starred from "../Pages/Starred/Starred";
 import ProjectDetails from "../Pages/Projects/ProjectDetails/ProjectDetails";
 import InnerPageLayout from "../ProtectedRoutes/InnerPageLayout";
+import PlanpageLayout from "../ProtectedRoutes/PlanpageLayout";
+import Plan from "../Pages/Plan/Plan";
 
 export const PageRoutes = createBrowserRouter([
     {
@@ -39,6 +41,15 @@ export const PageRoutes = createBrowserRouter([
                 path: '/projects/:id',
                 element: <ProjectDetails />
             },
+        ]
+    },
+    {
+        element: <PlanpageLayout />,
+        children: [
+            {
+                path: "/plan",
+                element: <Plan />
+            }
         ]
     },
     {

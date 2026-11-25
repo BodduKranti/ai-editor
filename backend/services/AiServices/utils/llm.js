@@ -11,8 +11,9 @@ const llm = new ChatOpenRouter({
 
     apiKey: process.env.OPENROUTER_API_KEY,
     model: "openrouter/free",
-    maxTokens: 1050,
-    temperature: 0,
+
+    maxTokens: 8192,   // use 4096 if the model rejects 8192
+    temperature: 0.2,
     configuration: { baseURL: "https://openrouter.ai/api/v1" },
 });
 

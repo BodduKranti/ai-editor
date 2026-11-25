@@ -35,12 +35,13 @@ const send = (socket, data) => {
     socket.emit('terminal:data', String(data || ''))
 }
 
-const nameSafe = (name) => {
-    if (!name || name === '.' || name === '..' || name.includes('/') || name.includes('\\')) {
-        throw new Error(`Invalid file/folder name: ${name}`)
-    }
-    return name
-}
+const safeName = (name) =>
+    typeof name === "string" &&
+    name.trim() &&
+    !name.includes("/") &&
+    !name.includes("\\") &&
+    name !== "." &&
+    name !== ".."
 
 const workspace = (projectId) => path.join(WORKSPACE_ROOT, String(projectId))
 
@@ -85,8 +86,12 @@ const writeNodes = async (nodes, directory) => {
     if (!Array.isArray(nodes)) return
 
     for (const node of nodes) {
-        const name = nameSafe(node?.name)
-        const target = path.join(directory, name)
+        if (!safeName(node?.name)) {
+            console.log("Skipping node with invalid name:", node?.name)
+            continue
+        }
+
+        const target = path.join(directory, node.name)
 
         if (node.type === 'folder') {
             await fs.mkdir(target, { recursive: true })

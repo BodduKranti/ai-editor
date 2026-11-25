@@ -1,5 +1,6 @@
 import redis from "../../../shared/redis/redis.js"
 import { Project } from "../models/project.model.js"
+// import { deductCredtisProject } from "../utils/deductCredits.js"
 
 export const createProjectController = async (req, res) => {
     try {
@@ -27,6 +28,7 @@ export const createProjectController = async (req, res) => {
             description
         })
 
+        // await deductCredtisProject({ userId: userID, amount: 10 })
 
         return res.status(200).json(projectList)
     } catch (error) {

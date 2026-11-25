@@ -9,7 +9,8 @@ interface AuthUser {
     email: string,
     avatar: string,
     token: string | null,
-    owner: string | null
+    owner: string | null,
+    credits: any
 }
 
 interface ContextProps {
@@ -40,7 +41,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: userData, isLoading, refetch } = useApiGetRequest(
         Routes.CURRENT_USER,
-        { enabled: !!sessionId }
+        undefined,
+        !!sessionId
     );
 
     //porject top bar
@@ -92,7 +94,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: userData.email,
             avatar: userData.avatar,
             token: sessionId || null,
-            owner: userData?.owner
+            owner: userData?.owner,
+            credits: userData?.credits || 0
         };
     }, [userData]);
 

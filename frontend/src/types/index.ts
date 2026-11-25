@@ -6,6 +6,8 @@ export enum Routes {
     LOGIN_URL = `/auth/login`,
     LOGOUT_URL = `/auth/logout`,
     CURRENT_USER = "/me",
+    DEDUCT_CREDITS = `/auth/user/deduct-credits`,
+    ADD_CREDITS = `/auth/user/add-credits`,
 
     //PROJECT SERVICES
     CREATE_PROJECT = "/project/create-project",
@@ -25,5 +27,9 @@ export enum Routes {
     GET_TREE_BY_ID = '/file/get-tree-byid',
 
     //AI SERVICES
-    AI_SERVICES = '/ai/chat'
+    AI_SERVICES = '/ai/chat',
+
+    //PAYMENT SERVICES
+    CREATE_PAYMENT = '/payment/create-order',
+    VERIFY_PAYMENT = '/payment/payment-verify',
 }

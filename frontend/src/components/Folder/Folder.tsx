@@ -7,6 +7,7 @@ import { useApiDeleteRequest, useApiPostrequest, useApiUpdateRequest } from '../
 import { Routes } from '../../types'
 import { toast } from 'react-toastify'
 import OnContextMenu from '../OnContextMenu/OnContextMenu'
+import { useQueryClient } from '@tanstack/react-query'
 
 export interface fileNode {
     owner: string,
@@ -45,6 +46,7 @@ const Folder = ({
     activeTab,
     setActiveTab
 }: Folderprops) => {
+    const queryClient = useQueryClient()
     const [filename, setFileame] = useState<string>('')
     const [foldername, setFoldername] = useState<string>('')
 
@@ -80,6 +82,9 @@ const Folder = ({
             onSuccess: () => {
                 console.log('Successfull created folder')
                 reloadTree()
+                queryClient.invalidateQueries({
+                    queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
+                })
             },
             onError: (error: any) => {
                 toast.error(error?.response?.data?.message)
@@ -107,6 +112,9 @@ const Folder = ({
             onSuccess: () => {
                 console.log('Successfull created File')
                 reloadTree()
+                queryClient.invalidateQueries({
+                    queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
+                })
             },
             onError: (error: any) => {
                 toast.error(error?.response?.data?.message)
@@ -128,6 +136,9 @@ const Folder = ({
         }, {
             onSuccess: () => {
                 reloadTree()
+                queryClient.invalidateQueries({
+                    queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
+                })
             },
             onError: (error: any) => {
                 toast.error(error?.response?.data?.message)
@@ -143,6 +154,9 @@ const Folder = ({
         }, {
             onSuccess: () => {
                 reloadTree()
+                queryClient.invalidateQueries({
+                    queryKey: [`${Routes.GET_TREE_BY_ID}/${projectId}`],
+                })
                 // setOpenTabs((prev: any) => prev?.filter((t: any) => t._id !== node?._id))
                 // setActiveTab((prev: any) => prev?._id === node?._id ? null : activeTab)
             },

@@ -17,6 +17,8 @@ const required = [
     'PROJECT_SERVICE',
     'FILE_SERVICE',
     'AI_FILE_SERVICE',
+    'PAYMENT_SERVICE',
+    'TERMINAL_SERVICE'
 ]
 const missing = required.filter((key) => !process.env[key])
 if (missing.length) {
@@ -25,9 +27,9 @@ if (missing.length) {
 }
 
 // Remove trailing slashes so CORS origin and proxy targets match exactly
-const clean = (url, name = 'URL') => {
+const clean = (url) => {
     if (!url) {
-        throw new Error(`Missing environment variable: ${name}`)
+        throw new Error(`Missing environment variable: ${url}`)
     }
     return url.replace(/\/+$/, '')
 }
@@ -38,6 +40,7 @@ const PROJECT_SERVICE = clean(process.env.PROJECT_SERVICE)
 const FILE_SERVICE = clean(process.env.FILE_SERVICE)
 const AI_FILE_SERVICE = clean(process.env.AI_FILE_SERVICE)
 const TERMINAL_SERVICE = clean(process.env.TERMINAL_SERVICE)
+const PAYMENT_SERVICE = clean(process.env.PAYMENT_SERVICE)
 
 const PORT = process.env.PORT || 8000
 
@@ -69,15 +72,8 @@ app.get('/health', (_, res) => {
     return res.status(200).json({ status: 'ok' })
 })
 
-// ---- AUTH USER SERVICES ----
-// By default "/api/auth" is stripped, so the auth service receives "/login".
-// If your auth service defines routes WITH the "/api/auth" prefix, uncomment
-// proxyReqPathResolver below.
-app.use(
-    '/api/auth',
-    proxy(AUTH_SERVICE, {
-        // proxyReqPathResolver: (req) => `/api/auth${req.url}`,
-    })
+app.use('/api/auth', proxy(AUTH_SERVICE, {        // proxyReqPathResolver: (req) => `/api/auth${req.url}`,
+})
 )
 app.get('/api/me', protectMiddleware, userController)
 
@@ -92,6 +88,10 @@ app.use('/api/ai', proxywithHEader(AI_FILE_SERVICE))
 
 // ---- Terminal SERVICES ----
 app.use('/api/terminal', protectMiddleware, proxywithHEader(TERMINAL_SERVICE))
+
+//----------- PAYEMT SERVICES ----------- 
+app.use("/api/payment", protectMiddleware, proxywithHEader(PAYMENT_SERVICE))
+
 
 // ---- Fallback error handler (so errors show in logs, not just 502) ----
 app.use((err, req, res, next) => {

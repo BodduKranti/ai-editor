@@ -5,7 +5,7 @@ import Logout from "../Logout/Logout"
 const Userprofile = () => {
     const { authUser } = userAuthProvider()
     const [menuOpen, setMenuOpen] = useState<boolean>(false)
-    const initials = authUser?.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || 'Guest'
+    const initials = authUser?.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || 'Guest'
 
     return (
         <div className="relative">

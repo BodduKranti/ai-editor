@@ -53,3 +53,16 @@ How to impliment
 TERMINAL SERVICES
 =================================
 CMD     -       npm i socketio
+<<<<<<< HEAD
+=======
+
+
+=================================
+PAYMENT METHOD
+=================================
+npm i razorpay
+GET THE KEYS
+
+RAZORPAY_API_KEY
+RAZORPAY_SECRET_KEY
+>>>>>>> 6c03a69 (Plan impliment)
