@@ -130,7 +130,7 @@ export const paymentVeryfyControler = async (req, res) => {
             userId,
             credits: payment.credits
         })
-        return res.status(200).json({ message: `Payment Verified`, data })
+        return res.status(200).json({ message: `Payment Verified` })
         // await Payment
     } catch (error) {
         return res.status(500).json({ message: `Payment Verify error ${error}` })
