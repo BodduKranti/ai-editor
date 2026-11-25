@@ -156,38 +156,42 @@ export const addCredits = async (req, res) => {
     try {
         const { userId, credits } = req.body
 
-
-
         if (!userId) {
             return res.status(400).json({ message: "User ID is required!" })
         }
 
-        const user = await User.findById(userId)
-
-        if (!user) {
-            return res.status(400).json({ message: "User not found" })
+        if (!Number.isFinite(credits) || credits <= 0) {
+            return res.status(400).json({ message: "Credits must be a positive number" })
         }
 
-        user.credits = (user?.credits || 0) + credits
-        user.save()
-        const sessionId = await redis.get(`user-session-${userId}`)
-        await redis.set(
-            `session-${sessionId}`,
-            JSON.stringify({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                credits: user?.credits
-            }),
-            'EX',
-            SESSION_TTL_SECONDS
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $inc: { credits } },
+            { new: true }
         )
 
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
+        }
 
-        return res.status(200).json(user?.credits)
+        const sessionId = await redis.get(`user-session-${userId}`)
+        if (sessionId) {
+            await redis.set(
+                `session-${sessionId}`,
+                JSON.stringify({
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    credits: user.credits
+                }),
+                'EX',
+                SESSION_TTL_SECONDS
+            )
+        }
 
+        return res.status(200).json(user.credits)
     } catch (error) {
-        return res.status(500).json({ message: `Add credits error ${error}` })
+        return res.status(500).json({ message: `Add credits error: ${error.message}` })
     }
 }
