@@ -11,6 +11,6 @@ export const addCredits = async ({ userId, credits }) => {
 
         return res
     } catch (error) {
-        return res.status(500).json({ message: 'Credits deduct error', error })
+        return error
     }
 }
